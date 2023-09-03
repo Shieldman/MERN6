@@ -6,7 +6,9 @@ const getAllSports = async (req, res, next) => {
     const nameFilterOptions = {
       name: { $regex: new RegExp(filter, "i") },
     };
-    const sports = await Sports.find(filter ? nameFilterOptions : {});
+
+    const sports = await Sports.find(filter ? nameFilterOptions : {}).populate("athletes");
+
     res.status(200).json({ data: sports });
   } catch (err) {
     res.status(500).json({ data: err.message });
@@ -14,37 +16,54 @@ const getAllSports = async (req, res, next) => {
 };
 
 const createSport = async (req, res, next) => {
-  const newSport = new Sports({
-    name: req.body.name,
-    age: req.body.age,
-    year: req.body.year,
-    sports: req.body.sports,
-  });
-  await newSport.save();
-  res.status(201).json({ data: newSport });
-};
-
-const getSportById = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    //mongo
-    const sports = await Sports.findById(id);
-    res.status(200).json({ data: sports });
+    const newSport = new Sports({
+      name: req.body.name,
+      players: req.body.players,
+      country: req.body.country,
+      athletes: req.body.athletes
+    });
+
+    await newSport.save();
+    res.status(201).json({ data: newSport });
   } catch (err) {
     res.status(500).json({ data: err.message });
   }
 };
 
+const getSportById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const sport = await Sports.findById(id)
+      .populate({
+        path: "athletes",
+        model: Athletes,
+        select: "*",
+      });
+
+    res.status(200).json({ data: sport });
+  } catch (err) {
+    res.status(500).json({ data: err.message });
+  }
+}
+
 const updateSportById = async (req, res, next) => {
-  const { name, age, year, sports } = req.body;
+  const { name, players, country, athletes } = req.body;
 
   try {
     const { id } = req.params;
     const sport = await Sports.findByIdAndUpdate(
       id,
-      { name, age, year, sports },
+      { name, players, country },
       { new: true }
     );
+
+    // If you want to update the athletes associated with the sport, you can use athlete IDs.
+    if (athletes && athletes.length > 0) {
+      sport.athletes = athletes;
+      await sport.save();
+    }
+
     res.status(200).json({ data: sport });
   } catch (err) {
     res.status(500).json({ data: err.message });
