@@ -1,7 +1,3 @@
-Certainly! Here's a combined documentation for both sets of code:
-
----
-
 # Sports and Athletes API Documentation
 
 Welcome to the Sports and Athletes API documentation. This API allows you to manage sports, athletes, and their associations.
@@ -162,7 +158,3 @@ Currently, this API does not require authentication. However, you should conside
   - `404 Not Found`: The requested resource does not exist.
   - `409 Conflict`: A conflict occurred, such as trying to delete an athlete associated with a sport.
   - `500 Internal Server Error`: An unexpected server error occurred.
-
-## 6. Rate Limits
-
-Currently, there are no rate limits set for this API. However, it's advisable to implement
