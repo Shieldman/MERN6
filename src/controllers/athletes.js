@@ -1,4 +1,5 @@
 const { Athletes, Sports } = require("../models/mongo");
+const { updateSportById } = require("./sports");
 
 const getAllAthletes = async (req, res, next) => {
   try {
@@ -6,7 +7,14 @@ const getAllAthletes = async (req, res, next) => {
     const nameFilterOptions = {
       name: { $regex: new RegExp(filter, "i") },
     };
-    const athletes = await Athletes.find(filter ? nameFilterOptions : {});
+    const athletes = await Athletes.find(filter ? nameFilterOptions : {}).populate({
+      path: "sports",
+      model: "Sport",
+      select: {
+        name: true,
+      },
+    })
+    .lean();
     res.status(200).json({ data: athletes });
   } catch (err) {
     res.status(500).json({ data: err.message });
@@ -32,10 +40,12 @@ const createAthlete = async (req, res, next) => {
 
     await newAthlete.save();
 
-    // Update the sport's athlete reference
-    existingSport.athletes = newAthlete._id;
-    await existingSport.save();
-    console.log(existingSport.athletes);
+    existingSport.athletes.push(newAthlete._id)
+
+     await Sports.findByIdAndUpdate(
+       existingSport._id,
+       { athletes: existingSport.athletes },
+     );
 
     res.status(201).json({ data: newAthlete });
   } catch (err) {
@@ -46,7 +56,14 @@ const createAthlete = async (req, res, next) => {
 const getAthleteById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const athlete = await Athletes.findById(id).populate("sport");
+    const athlete = await Athletes.findById(id).populate({
+      path: "sports",
+      model: "Sport",
+      select: {
+        name: true,
+      },
+    })
+    .lean();
     res.status(200).json({ data: athlete });
   } catch (err) {
     res.status(500).json({ data: err.message });

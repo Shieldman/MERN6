@@ -7,7 +7,16 @@ const getAllSports = async (req, res, next) => {
       name: { $regex: new RegExp(filter, "i") },
     };
 
-    const sports = await Sports.find(filter ? nameFilterOptions : {}).populate("athletes");
+    const sports = await Sports.find(filter ? nameFilterOptions : {})
+      .populate({
+        path: "athletes",
+        model: "Athlete",
+        select: {
+          name: true,
+          age: true,
+        },
+      })
+      .lean();
 
     res.status(200).json({ data: sports });
   } catch (err) {
@@ -21,7 +30,7 @@ const createSport = async (req, res, next) => {
       name: req.body.name,
       players: req.body.players,
       country: req.body.country,
-      athletes: req.body.athletes
+      athletes: req.body.athletes,
     });
 
     await newSport.save();
@@ -37,15 +46,18 @@ const getSportById = async (req, res, next) => {
     const sport = await Sports.findById(id)
       .populate({
         path: "athletes",
-        model: Athletes,
-        select: "*",
-      });
+        model: "Athlete",
+        select: {
+          name: true,
+        },
+      })
+      .lean();
 
     res.status(200).json({ data: sport });
   } catch (err) {
     res.status(500).json({ data: err.message });
   }
-}
+};
 
 const updateSportById = async (req, res, next) => {
   const { name, players, country, athletes } = req.body;
