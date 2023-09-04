@@ -52,7 +52,6 @@ const getSportById = async (req, res, next) => {
         },
       })
       .lean();
-
     res.status(200).json({ data: sport });
   } catch (err) {
     res.status(500).json({ data: err.message });
@@ -85,8 +84,26 @@ const updateSportById = async (req, res, next) => {
 const deleteSportById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    await Sports.deleteOne({ _id: id });
-    res.status(200).json({ data: "OK" });
+    const sport = await Sports.findById(id)
+      .populate({
+        path: "athletes",
+        model: "Athlete",
+        select: {
+          name: true,
+        },
+      })
+      .lean();
+    console.log(sport);
+    if (sport.athletes.length == 0) {
+      await Sports.deleteOne({ _id: id });
+      res.status(200).json({ data: "OK" });
+    } else {
+      res
+        .status(409)
+        .json({
+          data: "This sport still has athletes in it, please delete the Athletes fist",
+        });
+    }
   } catch (err) {
     res.status(500).json({ data: err.message });
   }

@@ -7,14 +7,15 @@ const getAllAthletes = async (req, res, next) => {
     const nameFilterOptions = {
       name: { $regex: new RegExp(filter, "i") },
     };
-    const athletes = await Athletes.find(filter ? nameFilterOptions : {}).populate({
-      path: "sports",
-      model: "Sport",
-      select: {
-        name: true,
-      },
-    })
-    .lean();
+    const athletes = await Athletes.find(filter ? nameFilterOptions : {})
+      .populate({
+        path: "sports",
+        model: "Sport",
+        select: {
+          name: true,
+        },
+      })
+      .lean();
     res.status(200).json({ data: athletes });
   } catch (err) {
     res.status(500).json({ data: err.message });
@@ -40,12 +41,11 @@ const createAthlete = async (req, res, next) => {
 
     await newAthlete.save();
 
-    existingSport.athletes.push(newAthlete._id)
+    existingSport.athletes.push(newAthlete._id);
 
-     await Sports.findByIdAndUpdate(
-       existingSport._id,
-       { athletes: existingSport.athletes },
-     );
+    await Sports.findByIdAndUpdate(existingSport._id, {
+      athletes: existingSport.athletes,
+    });
 
     res.status(201).json({ data: newAthlete });
   } catch (err) {
@@ -56,14 +56,15 @@ const createAthlete = async (req, res, next) => {
 const getAthleteById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const athlete = await Athletes.findById(id).populate({
-      path: "sports",
-      model: "Sport",
-      select: {
-        name: true,
-      },
-    })
-    .lean();
+    const athlete = await Athletes.findById(id)
+      .populate({
+        path: "sports",
+        model: "Sport",
+        select: {
+          name: true,
+        },
+      })
+      .lean();
     res.status(200).json({ data: athlete });
   } catch (err) {
     res.status(500).json({ data: err.message });
@@ -100,12 +101,15 @@ const deleteAthleteById = async (req, res, next) => {
     const athlete = await Athletes.findById(id);
 
     // If the athlete is associated with a sport, remove the athlete reference from the sport
-    if (athlete.sport) {
-      const existingSport = await Sports.findById(athlete.sport);
-      if (existingSport) {
-        existingSport.athlete = null;
-        await existingSport.save();
-      }
+    if (athlete.sports) {
+      const existingSport = await Sports.findById(athlete.sports);
+      console.log(existingSport);
+      const index = existingSport.athletes.indexOf(req.id);
+      existingSport.athletes.splice(index, 1);
+
+      await Sports.findByIdAndUpdate(existingSport._id, {
+        athletes: existingSport.athletes,
+      });
     }
 
     await Athletes.deleteOne({ _id: id });
